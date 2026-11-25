@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Quiet Chat</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon.svg">
+<style>
+:root{color-scheme:dark;--bg:#080c17;--panel:#11182a;--panel2:#172138;--line:#25314a;--text:#eaf0ff;--muted:#8d9ab5;--accent:#8a7dff;--accent2:#55d6c2;--danger:#ff718a}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);overscroll-behavior:none}
+body{background:radial-gradient(ellipse at 20% 0%,#18223b 0%,transparent 44%),var(--bg)}
+button,input,textarea{font:inherit;color:inherit}button{cursor:pointer;border:0}
+.app{height:100dvh;max-width:680px;margin:auto;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}
+.top{display:flex;align-items:center;justify-content:space-between;padding:17px 5px 12px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:750;letter-spacing:.2px}.logo{height:35px;width:35px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#47c7c5);display:grid;place-items:center;box-shadow:0 5px 22px #7770ff55}
+.status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:7px}.dot{width:8px;height:8px;border-radius:50%;background:#68738a}.dot.live{background:var(--accent2);box-shadow:0 0 9px #55d6c277}
+.card{background:linear-gradient(160deg,#131c30ee,#0f1627ee);border:1px solid #27334c;border-radius:22px;box-shadow:0 18px 50px #0003}
+.screen{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;padding:22px;background:#070b15f7;backdrop-filter:blur(20px);transition:opacity .22s,transform .22s}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(1.025)}
+.setup,.lockbox{width:min(100%,420px);padding:27px 23px}
+.kicker{color:var(--accent2);font-size:11px;text-transform:uppercase;letter-spacing:2px;font-weight:750}
+h1{font-size:25px;margin:9px 0 8px;letter-spacing:-.6px}p{color:var(--muted);line-height:1.55;font-size:14px}
+.field{display:flex;flex-direction:column;gap:7px;margin:14px 0}.field label{font-size:12px;color:var(--muted)}input,textarea{width:100%;background:#0a1120;border:1px solid var(--line);border-radius:13px;padding:13px;outline:none}input:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px #8a7dff1e}
+.primary{width:100%;padding:14px;border-radius:14px;background:linear-gradient(110deg,#8277ff,#4cbdbd);font-weight:750;color:#080c17;margin-top:8px;box-shadow:0 8px 24px #7b71ff26}
+.secondary{padding:9px 12px;border-radius:11px;background:#202b42;color:var(--text);font-size:12px}
+.note{font-size:11px;color:#7887a4;margin-top:13px}
+.pinrow{display:flex;gap:12px;justify-content:center;margin:24px 0 16px}.pin-dot{height:13px;width:13px;border-radius:50%;background:#26324a;transition:.15s}.pin-dot.filled{background:var(--accent2);box-shadow:0 0 13px #55d6c288;transform:scale(1.08)}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.key{background:#182239;border:1px solid #293650;border-radius:16px;height:58px;font-size:20px;font-weight:600;transition:transform .1s,background .15s}.key:active{transform:scale(.95);background:#263454}.key.alt{font-size:13px;color:var(--muted)}
+.chathead{padding:13px 4px 15px;display:flex;align-items:center;justify-content:space-between}.channel{font-size:17px;font-weight:700}.sub{font-size:12px;color:var(--muted);margin-top:3px}
+.messages{flex:1;overflow:auto;padding:10px 3px 18px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:#34415a transparent}
+.empty{margin:auto;text-align:center;max-width:270px;padding:22px}.emptyIcon{width:62px;height:62px;margin:0 auto 15px;border-radius:20px;background:#1a2540;display:grid;place-items:center;color:var(--accent2);font-size:25px}
+.msg{max-width:88%;padding:11px 13px;border-radius:16px;background:#151f34;border:1px solid #23314a;animation:appear .18s ease-out}.msg.mine{align-self:flex-end;background:#29254c;border-color:#403b70;border-bottom-right-radius:5px}.msg:not(.mine){align-self:flex-start;border-bottom-left-radius:5px}.author{font-size:11px;color:var(--accent2);font-weight:700;margin-bottom:4px}.body{font-size:14px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}.time{font-size:10px;color:#7887a4;margin-top:5px;text-align:right}
+@keyframes appear{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.composer{padding:10px 0 calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:flex-end}.composer textarea{resize:none;max-height:100px;min-height:48px;border-radius:16px;padding:13px;flex:1}.send{width:48px;height:48px;border-radius:15px;background:linear-gradient(135deg,var(--accent),#53c9c0);color:#07101c;font-size:18px;font-weight:800}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,15px);opacity:0;pointer-events:none;background:#1c2942;border:1px solid #34435e;border-radius:13px;padding:11px 14px;font-size:12px;z-index:10;transition:.2s;max-width:90vw}.toast.show{opacity:1;transform:translate(-50%,0)}
+.modal{position:fixed;inset:0;background:#0009;z-index:4;display:grid;place-items:center;padding:18px}.modal.hidden{display:none}.modalcard{width:min(100%,430px);padding:22px}.small{font-size:12px}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top"><div class="brand"><div class="logo">✦</div>Quiet Chat</div><div class="status"><span class="dot" id="liveDot"></span><span id="statusText">Locked</span></div></header>
+  <div class="chathead"><div><div class="channel" id="channelName">Private channel</div><div class="sub">Messages load only when requested</div></div><button class="secondary" id="settingsBtn">Settings</button></div>
+  <main class="messages" id="messages"><div class="empty"><div class="emptyIcon">✦</div><b>Nothing loaded</b><p>Use <code>/show old 20</code> to request older messages. New messages appear live after connecting.</p></div></main>
+  <form class="composer" id="composer"><textarea id="messageInput" rows="1" placeholder="Message this channel…"></textarea><button class="send" aria-label="Send">↑</button></form>
+</div>
+
+<div class="screen" id="setupScreen">
+ <div class="setup card">
+  <div class="kicker">First-time setup</div><h1>Make this space yours.</h1><p>Configure your private channel and create a six-digit PIN.</p>
+  <div class="field"><label>Discord bot token</label><input id="token" type="password" autocomplete="off" placeholder="Bot token"></div>
+  <div class="field"><label>Channel ID</label><input id="channel" inputmode="numeric" placeholder="Discord channel ID"></div>
+  <div class="field"><label>Create six-digit PIN</label><input id="newPin" inputmode="numeric" maxlength="6" type="password" placeholder="••••••"></div>
+  <div class="field"><label>Confirm PIN</label><input id="confirmPin" inputmode="numeric" maxlength="6" type="password" placeholder="••••••"></div>
+  <button class="primary" id="saveSetup">Save locally & continue</button>
+  <div class="note">Personal prototype: token and channel ID are saved only in this browser's local storage. Never use this with a token you cannot afford to lose.</div>
+ </div>
+</div>
+
+<div class="screen hidden" id="lockScreen">
+ <div class="lockbox card"><div class="kicker">Local privacy lock</div><h1>Enter your PIN</h1><p>Unlock to continue.</p>
+  <div class="pinrow" id="pinDots"><span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span></div>
+  <div class="keypad" id="keypad">
+   <button class="key">1</button><button class="key">2</button><button class="key">3</button>
+   <button class="key">4</button><button class="key">5</button><button class="key">6</button>
+   <button class="key">7</button><button class="key">8</button><button class="key">9</button>
+   <button class="key alt" data-action="clear">Clear</button><button class="key">0</button><button class="key alt" data-action="back">⌫</button>
+  </div>
+ </div>
+</div>
+<div class="modal hidden" id="settingsModal"><div class="modalcard card"><div class="kicker">Settings</div><h1>Local configuration</h1><p class="small">Edit credentials or change your PIN. Your settings stay in this browser.</p>
+<div class="field"><label>Bot token</label><input id="editToken" type="password"></div><div class="field"><label>Channel ID</label><input id="editChannel"></div>
+<div class="field"><label>New six-digit PIN (leave blank to keep)</label><input id="editPin" type="password" inputmode="numeric" maxlength="6"></div>
+<button class="primary" id="saveSettings">Save</button><button class="secondary" style="width:100%;margin-top:9px" id="closeSettings">Close</button><p class="note">Changing the PIN requires knowing the current PIN first. This simplified prototype does not provide PIN recovery.</p></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s), cfgKey="quietchat_config";
+let config=null,pinBuffer="",socket=null,heartbeat=null,seq=null,locked=true,toastTimer=null;
+const toast=(msg)=>{let t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2600)};
+async function hashPin(pin){const bytes=new TextEncoder().encode(pin);const digest=await crypto.subtle.digest("SHA-256",bytes);return [...new Uint8Array(digest)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function readConfig(){try{return JSON.parse(localStorage.getItem(cfgKey)||"null")}catch{return null}}
+function setScreen(screen){$("#setupScreen").classList.add("hidden");$("#lockScreen").classList.add("hidden");if(screen)screen.classList.remove("hidden")}
+function updateDots(){document.querySelectorAll(".pin-dot").forEach((d,i)=>d.classList.toggle("filled",i<pinBuffer.length))}
+function showLock(){locked=true;pinBuffer="";updateDots();setScreen($("#lockScreen"));$("#liveDot").classList.remove("live");$("#statusText").textContent="Locked";if(socket){try{socket.close()}catch{}}}
+function unlock(){locked=false;setScreen(null);$("#statusText").textContent="Connecting…";$("#channelName").textContent="Discord channel";startGateway();$("#messageInput").focus()}
+function enterDigit(d){if(locked&&pinBuffer.length<6){pinBuffer+=d;updateDots();if(pinBuffer.length===6)setTimeout(checkPin,120)}}
+async function checkPin(){let entered=pinBuffer;pinBuffer="";updateDots();if(await hashPin(entered)===config.pinHash){unlock()}else{setScreen(null);$("#messages").innerHTML='<div class="empty"><div class="emptyIcon">✓</div><b>Verification successful</b><p>Project under development.</p></div>';setTimeout(()=>showLock(),1800)}}
+$("#keypad").addEventListener("click",e=>{let b=e.target.closest("button");if(!b)return;if(b.dataset.action==="clear"){pinBuffer="";updateDots()}else if(b.dataset.action==="back"){pinBuffer=pinBuffer.slice(0,-1);updateDots()}else enterDigit(b.textContent.trim())});
+$("#saveSetup").onclick=async()=>{let token=$("#token").value.trim(),channel=$("#channel").value.trim(),pin=$("#newPin").value,confirm=$("#confirmPin").value;if(!token||!channel||!/^\d{6}$/.test(pin)||pin!==confirm){toast("Please check the token, channel ID, and matching six-digit PIN.");return}config={token,channel,pinHash:await hashPin(pin)};localStorage.setItem(cfgKey,JSON.stringify(config));setScreen($("#lockScreen"));toast("Saved locally. Enter your PIN.");};
+function setup(){config=readConfig();if(!config){setScreen($("#setupScreen"));return}showLock();$("#channelName").textContent="Private channel";}
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&!$("#setupScreen").classList.contains("hidden"))return;if(document.hidden&&!locked)showLock()});
+window.addEventListener("blur",()=>{if(!locked&&!$("#settingsModal").classList.contains("hidden"))return;if(!locked)showLock()});
+window.addEventListener("pageshow",()=>{if(config&&!locked)showLock()});
+async function discordFetch(path,method="GET",body=null){let res=await fetch("https://discord.com/api/v10"+path,{method,headers:{"Authorization":"Bot "+config.token,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});if(!res.ok){let txt=await res.text();throw new Error("Discord "+res.status+": "+txt.slice(0,150))}return res.status===204?null:res.json()}
+function renderMessage(m){let wrap=document.createElement("div");wrap.className="msg"+(m.author?.bot===false&&m.author?.id===window.currentUserId?" mine":"");let author=document.createElement("div");author.className="author";author.textContent=m.author?.global_name||m.author?.username||"Unknown";let body=document.createElement("div");body.className="body";body.textContent=m.content||((m.attachments?.length)?"[Attachment]":"[Empty message]");let time=document.createElement("div");time.className="time";time.textContent=new Date(m.timestamp).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});wrap.append(author,body,time);$("#messages").append(wrap);$("#messages").scrollTop=$("#messages").scrollHeight}
+function showMessages(list){$("#messages").innerHTML="";list.slice().reverse().forEach(renderMessage)}
+async function loadOld(n){if(!config)return;try{let list=await discordFetch(`/channels/${encodeURIComponent(config.channel)}/messages?limit=${Math.min(100,Math.max(1,n))}`);showMessages(list);toast(`Loaded ${list.length} messages`)}catch(e){toast("Could not load messages: "+e.message)}}
+function startGateway(){if(locked||!config)return;try{socket=new WebSocket("wss://gateway.discord.gg/?v=10&encoding=json")}catch(e){toast("Gateway connection failed");return}
+socket.onmessage=async ev=>{let d;try{d=JSON.parse(ev.data)}catch{return}if(d.s!==null&&d.s!==undefined)seq=d.s;
+if(d.op===10){let interval=d.d.heartbeat_interval;heartbeat=setInterval(()=>{if(socket?.readyState===1)socket.send(JSON.stringify({op:1,d:seq}))},interval);socket.send(JSON.stringify({op:2,d:{token:config.token,intents:1|512|32768,properties:{os:"web",browser:"QuietChat",device:"QuietChat"}}}))}
+if(d.op===1)socket.send(JSON.stringify({op:1,d:seq}));
+if(d.t==="READY"){window.currentUserId=d.d.user.id;$("#liveDot").classList.add("live");$("#statusText").textContent="Live";$("#channelName").textContent=d.d.guilds?.[0]?.id?"Private channel":"Discord channel"}
+if(d.t==="MESSAGE_CREATE"&&d.d.channel_id===config.channel){if(!locked)renderMessage(d.d)}
+if(d.op===7||d.op===9){try{socket.close()}catch{}}
+};
+socket.onclose=()=>{clearInterval(heartbeat);if(!locked){$("#liveDot").classList.remove("live");$("#statusText").textContent="Reconnecting";setTimeout(()=>{if(!locked)startGateway()},4000)}};
+socket.onerror=()=>{if(!locked)toast("Discord connection error")};
+}
+$("#composer").addEventListener("submit",async e=>{e.preventDefault();let text=$("#messageInput").value.trim();if(!text||locked)return;if(text.toLowerCase().startsWith("/show old ")){let n=parseInt(text.split(/\s+/)[2],10);if(Number.isFinite(n)&&n>0)await loadOld(n);else toast("Use /show old followed by a number");$("#messageInput").value="";return}try{await discordFetch(`/channels/${encodeURIComponent(config.channel)}/messages`,"POST",{content:text});$("#messageInput").value="";}catch(err){toast("Send failed: "+err.message)}});
+$("#settingsBtn").onclick=()=>{if(locked)return;$("#editToken").value=config.token;$("#editChannel").value=config.channel;$("#settingsModal").classList.remove("hidden")};
+$("#closeSettings").onclick=()=>$("#settingsModal").classList.add("hidden");
+$("#saveSettings").onclick=async()=>{let token=$("#editToken").value.trim(),channel=$("#editChannel").value.trim(),pin=$("#editPin").value;if(!token||!channel){toast("Token and channel are required");return}if(pin&&!/^\d{6}$/.test(pin)){toast("PIN must be six digits");return}config.token=token;config.channel=channel;if(pin)config.pinHash=await hashPin(pin);localStorage.setItem(cfgKey,JSON.stringify(config));$("#settingsModal").classList.add("hidden");showLock();toast("Saved. Re-enter PIN.")};
+$("#messageInput").addEventListener("input",e=>{e.target.style.height="auto";e.target.style.height=Math.min(e.target.scrollHeight,100)+"px"});
+if("serviceWorker"in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+setup();
+</script>
+</body>
+</html>
